@@ -1,80 +1,61 @@
 import { useEffect, useState } from "react"
 import styles from './Characters.module.css'
-
-export interface IResponse {
-    items: Item[];
-    meta:  Meta;
-    links: Links;
-}
-
-export interface Item {
-    id:          number;
-    name:        string;
-    ki:          string;
-    maxKi:       string;
-    race:        string;
-    gender:      Gender;
-    description: string;
-    image:       string;
-    affiliation: Affiliation;
-    deletedAt:   null;
-}
-
-export enum Affiliation {
-    ArmyOfFrieza = "Army of Frieza",
-    Freelancer = "Freelancer",
-    ZFighter = "Z Fighter",
-}
-
-export enum Gender {
-    Female = "Female",
-    Male = "Male",
-}
-
-export interface Links {
-    first:    string;
-    previous: string;
-    next:     string;
-    last:     string;
-}
-
-export interface Meta {
-    totalItems:   number;
-    itemCount:    number;
-    itemsPerPage: number;
-    totalPages:   number;
-    currentPage:  number;
-}
+import { Loading } from "../Loading/Loading";
+import { ErrorApi } from "../ErrorApi/ErrorApi";
+import { FcLike } from "react-icons/fc";
+import { Item } from "@interfaces/character.interfaces";
+import { getCharacters } from "../../services/character.services";
 
 
 export const Characters = () => {
 
     const [characters, setCharacters] = useState<Item[]>([])
+    const [error, setError] = useState<string | null>(null)
+    const [loading, setLoading] = useState<boolean>(true)
 
     useEffect(() => {
 
-       const getCharacters = async () =>{
-        const response = await fetch('https://dragonball-api.com/api/characters')
-        const data:IResponse = await response.json()
-        setCharacters(data.items)
-       }
-
-       getCharacters()
-
+        (async () => {
+            try {
+                const data = await getCharacters()
+                setCharacters(data)
+            } catch (error) {
+                if (error instanceof Error){
+                    setError(error.message)
+                }
+            } finally{
+                setLoading(false)
+            }
+        })
+        ()
+            
     }, [])
 
-  return (
-    <div>
-        <h1>Dragon ball characters</h1>
-        <div className={styles.container}>
-            {characters.map((character) => (
-                <div key={character.id} className={styles.card}>
-                    <img src={character.image} alt={character.name} />
-                    <h3>{character.name}</h3>
-                    <p>{character.description}</p>
-                </div>
-            ))}
+    if (loading) {
+        return <Loading />
+    }
+
+    if (error){
+        return <ErrorApi/>
+    }
+
+    return (
+        <div>
+            <h1>Dragon ball characters</h1>
+           
+            <div className={styles.container}>
+                {characters.map((character) => (
+                    <div key={character.id} className={styles.card}>
+                        <img src={character.image} alt={character.name} />
+                        <h3>{character.name}</h3>
+                        <p>{character.description}</p>
+
+                        <div className={styles.footer}>
+                            <FcLike />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
-  )
+    )
 }
