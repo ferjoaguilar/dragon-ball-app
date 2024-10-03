@@ -1,37 +1,30 @@
-import { useEffect, useState } from "react"
+import { useState } from 'react';
 import styles from './Characters.module.css'
 import { Loading } from "../Loading/Loading";
 import { ErrorApi } from "../ErrorApi/ErrorApi";
 import { FcLike } from "react-icons/fc";
-import { Item } from "@interfaces/character.interfaces";
+
 import { getCharacters } from "../../services/character.services";
+import useSWR from "swr";
 
 
 export const Characters = () => {
 
-    const [characters, setCharacters] = useState<Item[]>([])
-    const [error, setError] = useState<string | null>(null)
-    const [loading, setLoading] = useState<boolean>(true)
+    const [page, setPage] = useState<number>(2)
 
-    useEffect(() => {
+    const fetcher = () => getCharacters(page, 15)
+    const {data, error, isLoading} = useSWR(`api/characters?page=${page}`, fetcher)
 
-        (async () => {
-            try {
-                const data = await getCharacters()
-                setCharacters(data)
-            } catch (error) {
-                if (error instanceof Error){
-                    setError(error.message)
-                }
-            } finally{
-                setLoading(false)
-            }
-        })
-        ()
-            
-    }, [])
 
-    if (loading) {
+    const handleNextPage = () => {
+        setPage(page+1)
+    }
+
+    const handlePreviosPage = () => {
+        setPage(page-1)
+    }
+
+    if (isLoading) {
         return <Loading />
     }
 
@@ -44,7 +37,7 @@ export const Characters = () => {
             <h1>Dragon ball characters</h1>
            
             <div className={styles.container}>
-                {characters.map((character) => (
+                {data?.map((character) => (
                     <div key={character.id} className={styles.card}>
                         <img src={character.image} alt={character.name} />
                         <h3>{character.name}</h3>
@@ -55,6 +48,12 @@ export const Characters = () => {
                         </div>
                     </div>
                 ))}
+            </div>
+            {/* Pagination */}
+            <div>
+                <button onClick={handlePreviosPage}>Previous</button>
+                <span>Page {page}</span>
+                <button onClick={handleNextPage} >Next</button>
             </div>
         </div>
     )
